@@ -5,9 +5,7 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
-  <script type="text/babel">
 
-  </script>
 </head>
 <body>
   <section id="top">
@@ -15,6 +13,8 @@
     <select id="page">
       <option value="/success">Success</option>
       <option value="/badRequest">Bad Request</option>
+      <option value="/badRequest?valid=true">Bad Request (True)</option>
+      <option value="/unauthorized?loggedIn=yes">Unauthorized (Logged In)</option>
       <option value="/unauthorized">Unauthorized</option>
       <option value="/forbidden">Forbidden</option>
       <option value="/internal">Internal</option>
@@ -25,9 +25,106 @@
       <option value="application/json">JSON</option>
       <option value="text/xml">XML</option>
     </select>
-    <button id="send">Send</button>
+    <button id="send" type="submit">Send</button>
   </section>
   <section id="content">
   </section>
+
+  <script type="text/babel">
+    const handleResponse = (xhr, parseResponse) => {
+      const content = document.querySelector('#content');
+      switch(xhr.status) {
+        case 200: //if success
+          content.innerHTML = `<b>Success</b>`;
+          break;
+        case 201: //if created
+          content.innerHTML = '<b>Create</b>';
+          break;
+        case 400: //if bad request
+          content.innerHTML = `<b>Bad Request</b>`;
+          break;
+        case 401: //if bad request
+          content.innerHTML = `<b>Unauthorized Access</b>`;
+          break;
+        case 403: //if bad request
+          content.innerHTML = `<b>You are forbidden</b>`;
+          break;
+        case 404: //if not found
+          content.innerHTML = `<b>Resource Not Found</b>`;
+          break;
+        case 500: //if not found
+          content.innerHTML = `<b>Internal</b>`;
+          break;
+        case 501: //if not found
+          content.innerHTML = `<b>Not Implemented</b>`;
+          break;
+        default: //any other status
+          content.innerHTML = `Error code not implemented by client.`;
+          break;
+      }
+      //if we are expecting a response body (not in a head request)
+      if(parseResponse) {
+        const type = document.querySelector('#type').value;
+        if(type === "text/xml")
+        {
+          content.innerHTML += `<p>${xhr.response}</p>`;
+        }
+        //parse the object and print it to the console
+        //const obj = JSON.parse(xhr.response);
+        //console.dir(obj);
+        else {
+          const obj = JSON.parse(xhr.response);
+        //to make things easy to see, also print the raw JSON to the screen
+          content.innerHTML += `<p>Message: ${obj.message}</p>`;
+          if (obj.id) {
+            content.innerHTML += `<p>Error ID: ${obj.id}</p>`;
+          }
+        }
+      } else { 
+        //if not parsing a response, just alert that meta data was recieved
+        content.innerHTML += '<p>Meta Data Recieved</p>';
+      }
+    };
+    //function to send request
+    const requestUpdate = (e) => {
+      //grab url field 
+      const url = document.querySelector('#page').value;
+      //grab method selected
+      const type = document.querySelector('#type').value;
+      
+      //create a new AJAX request (asynchronous)
+      const xhr = new XMLHttpRequest();
+      //setup connect using the selected method and url
+      xhr.open('GET', url);
+      //set accept header in request to application/json
+      //The accept header is a comma separated list of
+      //accepted response types in order of preference
+      //from first to last. You only need to send one
+      //but you can send many, separated by commas.
+      xhr.setRequestHeader('Accept', type);
+      //if get request or head request
+      //set onload to parse request and get json message
+      xhr.onload = () => handleResponse(xhr, true);
+      //send ajax request
+      xhr.send();
+      
+      //cancel browser's default action
+      e.preventDefault();
+      //return false to prevent page redirection from a form
+      return false;
+    };
+    const init = () => {
+      //grab form
+      //function to handle our request
+      const getPage = (e) => requestUpdate(e);
+      
+      //add event listener
+      const userForm = document.querySelector("#send");
+      userForm.onclick = getPage;
+    };
+    window.onload = init;
+
+  </script>
+
 </body>
 </html>
